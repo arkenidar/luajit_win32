@@ -64,6 +64,18 @@ function Window:create()
                 window_ref.callbacks.command(control_id, notification)
             end
             return 0
+        elseif msg == win32.WM_TIMER then
+            if window_ref.callbacks.timer then
+                window_ref.callbacks.timer(wParam)
+            end
+            return 0
+        elseif msg == win32.WM_SIZE then
+            local width = bit.band(tonumber(lParam), 0xFFFF)
+            local height = bit.rshift(tonumber(lParam), 16)
+            if window_ref.callbacks.size then
+                window_ref.callbacks.size(width, height)
+            end
+            return 0
         elseif msg == win32.WM_CLOSE then
             if window_ref.callbacks.close then
                 if window_ref.callbacks.close() then
@@ -215,6 +227,33 @@ function Window:add_label(id, x, y, w, h, text)
 
     if hwnd == nil then
         error("Failed to create label: " .. win32.GetLastError())
+    end
+
+    self.controls[id] = hwnd
+    return id, hwnd
+end
+
+function Window:add_opengl_view(id, x, y, w, h)
+    if id == nil then
+        id = generate_id()
+    end
+
+    -- Create child window with clipping styles for OpenGL
+    local className = win32.to_wstring("LuaJITWindow")
+    local hwnd = win32.CreateWindowExW(
+        0,
+        className,
+        nil,
+        win32.WS_CHILD + win32.WS_VISIBLE + win32.WS_CLIPCHILDREN + win32.WS_CLIPSIBLINGS,
+        x, y, w, h,
+        self.hwnd,
+        ffi.cast("HMENU", id),
+        self.hInstance,
+        nil
+    )
+
+    if hwnd == nil then
+        error("Failed to create OpenGL child window: " .. win32.GetLastError())
     end
 
     self.controls[id] = hwnd

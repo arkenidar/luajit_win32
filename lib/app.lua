@@ -2,6 +2,7 @@
 -- To-Do List application logic
 
 local win32 = require("lib.win32_ffi")
+local gl_renderer_module = require("lib.gl_renderer")
 
 local M = {}
 
@@ -16,6 +17,7 @@ function TodoApp:new()
     self.window = nil
     self.controls = {}
     self.control_ids = {}
+    self.gl_renderer = nil
 
     return self
 end
@@ -58,11 +60,38 @@ function TodoApp:create_ui(window)
     self.controls.clear_button = clear_hwnd
     self.control_ids.clear_button = clear_id
 
+    -- Add OpenGL view on the right side (460, 10, 330x420)
+    local gl_view_id, gl_hwnd = window:add_opengl_view(nil, 460, 10, 330, 420)
+    self.controls.gl_view = gl_hwnd
+
+    -- Initialize OpenGL renderer
+    self.gl_renderer = gl_renderer_module.GLRenderer:new(gl_hwnd, 330, 420)
+
     -- Initially disable edit and delete buttons (no selection)
     self:update_button_states()
 end
 
 function TodoApp:setup_handlers(window)
+    -- Set up timer for OpenGL animation (~60 FPS)
+    local TIMER_ID = 1
+    win32.SetTimer(window.hwnd, TIMER_ID, 16, nil)
+
+    window:on("timer", function(timer_id)
+        if timer_id == TIMER_ID and self.gl_renderer then
+            self.gl_renderer:update(0.016)  -- 16ms in seconds
+            self.gl_renderer:render()
+        end
+    end)
+
+    window:on("destroy", function()
+        -- Cleanup OpenGL context
+        if self.gl_renderer then
+            self.gl_renderer:cleanup()
+        end
+        -- Kill timer
+        win32.KillTimer(window.hwnd, TIMER_ID)
+    end)
+
     -- Set up command handler
     window:on("command", function(control_id, notification)
         -- Button clicks have notification = BN_CLICKED (0)

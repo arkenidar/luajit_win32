@@ -117,6 +117,11 @@ ffi.cdef[[
         LPCSTR lpDefaultChar,
         BOOL* lpUsedDefaultChar
     );
+
+    // Timer functions
+    typedef unsigned long long UINT_PTR;
+    UINT_PTR SetTimer(HWND hWnd, UINT_PTR nIDEvent, UINT uElapse, void* lpTimerFunc);
+    BOOL KillTimer(HWND hWnd, UINT_PTR uIDEvent);
 ]]
 
 -- Load DLLs
@@ -478,6 +483,8 @@ M.GetWindowTextW = ffi.C.GetWindowTextW
 M.GetWindowTextLengthW = ffi.C.GetWindowTextLengthW
 M.EnableWindow = ffi.C.EnableWindow
 M.GetLastError = ffi.C.GetLastError
+M.SetTimer = ffi.C.SetTimer
+M.KillTimer = ffi.C.KillTimer
 
 -- Helper to extract control ID and notification code from WM_COMMAND wParam
 function M.extract_command(wParam)

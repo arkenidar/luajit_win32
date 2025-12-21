@@ -10,8 +10,8 @@ local app_module = require("lib.app")
 -- Create application instance
 local app = app_module.TodoApp:new()
 
--- Create main window (450x400)
-local window = gui.Window:new("Task Manager - LuaJIT Win32", 450, 400)
+-- Create main window (800x450)
+local window = gui.Window:new("Task Manager - LuaJIT Win32 (with OpenGL)", 800, 450)
 
 -- Build UI
 app:create_ui(window)
