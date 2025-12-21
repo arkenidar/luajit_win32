@@ -29,6 +29,7 @@ function Window:new(title, width, height)
     self.controls = {}
     self.callbacks = {}
     self.hInstance = win32.GetModuleHandleW(nil)
+    self.layout_manager = nil
 
     -- Create the window
     self:create()
@@ -72,8 +73,27 @@ function Window:create()
         elseif msg == win32.WM_SIZE then
             local width = bit.band(tonumber(lParam), 0xFFFF)
             local height = bit.rshift(tonumber(lParam), 16)
+
+            -- Call existing size callback
             if window_ref.callbacks.size then
                 window_ref.callbacks.size(width, height)
+            end
+
+            -- Trigger layout recalculation if attached
+            if window_ref.layout_manager then
+                window_ref.layout_manager:apply()
+            end
+
+            return 0
+        elseif msg == win32.WM_GETMINMAXINFO then
+            -- Allow layout system to enforce minimum window size
+            if window_ref.layout_manager then
+                local min_size = window_ref.layout_manager:get_minimum_size()
+                if min_size then
+                    local mmi = ffi.cast("MINMAXINFO*", lParam)
+                    mmi.ptMinTrackSize.x = min_size.width
+                    mmi.ptMinTrackSize.y = min_size.height
+                end
             end
             return 0
         elseif msg == win32.WM_CLOSE then
@@ -278,6 +298,16 @@ end
 
 function Window:enable_control(hwnd, enabled)
     win32.EnableWindow(hwnd, enabled and 1 or 0)
+end
+
+function Window:get_client_size()
+    local rect = ffi.new("RECT")
+    win32.GetClientRect(self.hwnd, rect)
+    return tonumber(rect.right), tonumber(rect.bottom)
+end
+
+function Window:set_layout(layout_manager)
+    self.layout_manager = layout_manager
 end
 
 function Window:run()

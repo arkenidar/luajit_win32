@@ -23,49 +23,94 @@ function TodoApp:new()
 end
 
 function TodoApp:create_ui(window)
+    local layout = require("lib.layout")
     self.window = window
 
-    -- UI Layout (450x400 window)
-    -- Label "New Task:" at (10, 10)
-    local label_id, label_hwnd = window:add_label(nil, 10, 10, 80, 20, "New Task:")
-    self.controls.label = label_hwnd
+    -- Create controls without positions (will be set by layout)
+    local label_id, label_hwnd = window:add_label(nil, 0, 0, 0, 0, "New Task:")
+    local edit_id, edit_hwnd = window:add_edit(nil, 0, 0, 0, 0, "")
+    local add_id, add_hwnd = window:add_button(nil, 0, 0, 0, 0, "Add")
+    local listbox_id, listbox = window:add_listbox(nil, 0, 0, 0, 0)
+    local edit_btn_id, edit_btn_hwnd = window:add_button(nil, 0, 0, 0, 0, "Edit Selected")
+    local delete_id, delete_hwnd = window:add_button(nil, 0, 0, 0, 0, "Delete")
+    local clear_id, clear_hwnd = window:add_button(nil, 0, 0, 0, 0, "Clear All")
+    local gl_view_id, gl_hwnd = window:add_opengl_view(nil, 0, 0, 0, 0)
 
-    -- Edit control at (10, 30, 300x25)
-    local edit_id, edit_hwnd = window:add_edit(nil, 10, 30, 300, 25, "")
-    self.controls.edit = edit_hwnd
-    self.control_ids.edit = edit_id
+    -- Store control references
+    self.controls = {
+        label = label_hwnd,
+        edit = edit_hwnd,
+        add_button = add_hwnd,
+        listbox = listbox,
+        edit_button = edit_btn_hwnd,
+        delete_button = delete_hwnd,
+        clear_button = clear_hwnd,
+        gl_view = gl_hwnd
+    }
+    self.control_ids = {
+        edit = edit_id,
+        add_button = add_id,
+        listbox = listbox_id,
+        edit_button = edit_btn_id,
+        delete_button = delete_id,
+        clear_button = clear_id
+    }
 
-    -- Add button at (320, 30, 100x25)
-    local add_id, add_hwnd = window:add_button(nil, 320, 30, 100, 25, "Add")
-    self.controls.add_button = add_hwnd
-    self.control_ids.add_button = add_id
+    -- Build layout tree
+    local lm = layout.LayoutManager:new(window)
+    local root = lm:create_flex_container({ direction = "row", gap = 10, padding = 10 })
 
-    -- Listbox at (10, 70, 420x220)
-    local listbox_id, listbox = window:add_listbox(nil, 10, 70, 420, 220)
-    self.controls.listbox = listbox
-    self.control_ids.listbox = listbox_id
+    -- Left panel (vertical stack)
+    local left_panel = root:add_flex_container({
+        direction = "column",
+        flex_basis = 450,
+        flex_grow = 0,
+        gap = 10
+    })
 
-    -- Edit button at (10, 300, 100x25)
-    local edit_btn_id, edit_btn_hwnd = window:add_button(nil, 10, 300, 100, 25, "Edit Selected")
-    self.controls.edit_button = edit_btn_hwnd
-    self.control_ids.edit_button = edit_btn_id
+    left_panel:add_item(label_hwnd, { height = 20, flex_grow = 0 })
 
-    -- Delete button at (120, 300, 100x25)
-    local delete_id, delete_hwnd = window:add_button(nil, 120, 300, 100, 25, "Delete")
-    self.controls.delete_button = delete_hwnd
-    self.control_ids.delete_button = delete_id
+    -- Input row
+    local input_row = left_panel:add_flex_container({
+        direction = "row",
+        height = 25,
+        gap = 10,
+        flex_grow = 0
+    })
+    input_row:add_item(edit_hwnd, { flex_grow = 1, min_width = 100 })
+    input_row:add_item(add_hwnd, { width = 100, flex_shrink = 0 })
 
-    -- Clear All button at (230, 300, 100x25)
-    local clear_id, clear_hwnd = window:add_button(nil, 230, 300, 100, 25, "Clear All")
-    self.controls.clear_button = clear_hwnd
-    self.control_ids.clear_button = clear_id
+    -- Listbox fills remaining space
+    left_panel:add_item(listbox.hwnd, { flex_grow = 1, min_height = 100 })
 
-    -- Add OpenGL view on the right side (460, 10, 330x420)
-    local gl_view_id, gl_hwnd = window:add_opengl_view(nil, 460, 10, 330, 420)
-    self.controls.gl_view = gl_hwnd
+    -- Button row
+    local button_row = left_panel:add_flex_container({
+        direction = "row",
+        height = 25,
+        gap = 10,
+        flex_grow = 0
+    })
+    button_row:add_item(edit_btn_hwnd, { flex_grow = 1 })
+    button_row:add_item(delete_hwnd, { flex_grow = 1 })
+    button_row:add_item(clear_hwnd, { flex_grow = 1 })
 
-    -- Initialize OpenGL renderer
-    self.gl_renderer = gl_renderer_module.GLRenderer:new(gl_hwnd, 330, 420)
+    -- OpenGL view (right panel)
+    root:add_item(gl_hwnd, {
+        flex_grow = 1,
+        min_width = 200,
+        on_resize = function(width, height)
+            if self.gl_renderer then
+                self.gl_renderer:resize(width, height)
+            end
+        end
+    })
+
+    -- Initialize OpenGL renderer (will be sized by layout)
+    self.gl_renderer = gl_renderer_module.GLRenderer:new(gl_hwnd, 100, 100)
+
+    -- Apply layout and attach to window
+    lm:apply()
+    window:set_layout(lm)
 
     -- Initially disable edit and delete buttons (no selection)
     self:update_button_states()

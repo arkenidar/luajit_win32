@@ -122,6 +122,46 @@ ffi.cdef[[
     typedef unsigned long long UINT_PTR;
     UINT_PTR SetTimer(HWND hWnd, UINT_PTR nIDEvent, UINT uElapse, void* lpTimerFunc);
     BOOL KillTimer(HWND hWnd, UINT_PTR uIDEvent);
+
+    // Window positioning and sizing functions
+    BOOL SetWindowPos(
+        HWND hWnd,
+        HWND hWndInsertAfter,
+        int X,
+        int Y,
+        int cx,
+        int cy,
+        UINT uFlags
+    );
+
+    BOOL MoveWindow(HWND hWnd, int X, int Y, int nWidth, int nHeight, BOOL bRepaint);
+    BOOL GetClientRect(HWND hWnd, RECT* lpRect);
+    BOOL GetWindowRect(HWND hWnd, RECT* lpRect);
+    BOOL InvalidateRect(HWND hWnd, const RECT* lpRect, BOOL bErase);
+
+    // Batch window positioning for performance
+    typedef void* HDWP;
+    HDWP BeginDeferWindowPos(int nNumWindows);
+    HDWP DeferWindowPos(
+        HDWP hWinPosInfo,
+        HWND hWnd,
+        HWND hWndInsertAfter,
+        int x,
+        int y,
+        int cx,
+        int cy,
+        UINT uFlags
+    );
+    BOOL EndDeferWindowPos(HDWP hWinPosInfo);
+
+    // Min/Max size tracking
+    typedef struct {
+        struct { LONG x; LONG y; } ptReserved;
+        struct { LONG x; LONG y; } ptMaxSize;
+        struct { LONG x; LONG y; } ptMaxPosition;
+        struct { LONG x; LONG y; } ptMinTrackSize;
+        struct { LONG x; LONG y; } ptMaxTrackSize;
+    } MINMAXINFO;
 ]]
 
 -- Load DLLs
@@ -191,6 +231,7 @@ M.WM_KEYUP            = 0x0101
 M.WM_CHAR             = 0x0102
 M.WM_COMMAND          = 0x0111
 M.WM_SYSCOMMAND       = 0x0112
+M.WM_GETMINMAXINFO    = 0x0024
 M.WM_TIMER            = 0x0113
 M.WM_HSCROLL          = 0x0114
 M.WM_VSCROLL          = 0x0115
@@ -380,6 +421,25 @@ M.IDIGNORE            = 5
 M.IDYES               = 6
 M.IDNO                = 7
 
+-- SetWindowPos flags
+M.SWP_NOSIZE          = 0x0001
+M.SWP_NOMOVE          = 0x0002
+M.SWP_NOZORDER        = 0x0004
+M.SWP_NOREDRAW        = 0x0008
+M.SWP_NOACTIVATE      = 0x0010
+M.SWP_FRAMECHANGED    = 0x0020
+M.SWP_SHOWWINDOW      = 0x0040
+M.SWP_HIDEWINDOW      = 0x0080
+M.SWP_NOCOPYBITS      = 0x0100
+M.SWP_NOOWNERZORDER   = 0x0200
+M.SWP_NOSENDCHANGING  = 0x0400
+
+-- SetWindowPos hWndInsertAfter values
+M.HWND_TOP            = ffi.cast("HWND", 0)
+M.HWND_BOTTOM         = ffi.cast("HWND", 1)
+M.HWND_TOPMOST        = ffi.cast("HWND", -1)
+M.HWND_NOTOPMOST      = ffi.cast("HWND", -2)
+
 -- Other Constants
 M.CW_USEDEFAULT       = 0x80000000
 M.IDC_ARROW           = 32512
@@ -485,6 +545,16 @@ M.EnableWindow = ffi.C.EnableWindow
 M.GetLastError = ffi.C.GetLastError
 M.SetTimer = ffi.C.SetTimer
 M.KillTimer = ffi.C.KillTimer
+
+-- Window positioning functions
+M.SetWindowPos = ffi.C.SetWindowPos
+M.MoveWindow = ffi.C.MoveWindow
+M.GetClientRect = ffi.C.GetClientRect
+M.GetWindowRect = ffi.C.GetWindowRect
+M.InvalidateRect = ffi.C.InvalidateRect
+M.BeginDeferWindowPos = ffi.C.BeginDeferWindowPos
+M.DeferWindowPos = ffi.C.DeferWindowPos
+M.EndDeferWindowPos = ffi.C.EndDeferWindowPos
 
 -- Helper to extract control ID and notification code from WM_COMMAND wParam
 function M.extract_command(wParam)
