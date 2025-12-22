@@ -88,10 +88,28 @@ Double-click `run.cmd` in Windows Explorer, or run from Command Prompt:
 ```cmd
 run.cmd
 ```
+**Note**: Automatically uses `--backend=win32` by default (on both Windows 11 and Wine)
+
+With explicit backend selection:
+```cmd
+run.cmd --backend=sdl2
+run.cmd --backend=sdl3
+```
+
+Or via Wine on Linux:
+```bash
+wine cmd /c run.cmd
+```
 
 #### On Linux/Unix:
 ```bash
 ./run.sh
+```
+
+With arguments:
+```bash
+./run.sh --backend=win32
+./run.sh --backend=sdl2
 ```
 
 ### Manual Way
@@ -99,12 +117,28 @@ run.cmd
 #### On Windows:
 ```cmd
 luajit.exe main.lua
+luajit.exe main.lua --backend=win32
 ```
 
 #### On Linux with Wine:
 ```bash
 wine luajit.exe main.lua
+wine luajit.exe main.lua --backend=win32
 ```
+
+### Command-Line Arguments
+
+The launcher scripts support passing arguments to the application:
+
+- `--backend=<name>` - Select GUI backend (win32, sdl2, sdl3)
+- Any other arguments supported by the main.lua application
+
+**Note:**
+- `run.cmd` defaults to `--backend=win32` if no backend is specified (required for Wine compatibility)
+- `run.sh` passes arguments through without modification
+- You can override the default backend by explicitly specifying `--backend=<name>`
+
+Both launchers will pass all arguments through to `luajit.exe main.lua`.
 
 ## Usage Guide
 

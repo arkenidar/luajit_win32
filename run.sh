@@ -6,13 +6,19 @@ echo "LuaJIT Win32 GUI Application Launcher"
 echo "======================================"
 echo ""
 
+# Display arguments if provided
+if [ $# -gt 0 ]; then
+    echo "Arguments: $@"
+    echo ""
+fi
+
 # Detect operating system
 if [[ "$OSTYPE" == "msys" || "$OSTYPE" == "cygwin" || "$OSTYPE" == "win32" ]]; then
     # Running on Windows
     echo "Detected: Windows"
-    echo "Running: luajit.exe main.lua"
+    echo "Running: luajit.exe main.lua $@"
     echo ""
-    ./luajit.exe main.lua
+    ./luajit.exe main.lua "$@"
 
 elif [[ "$OSTYPE" == "linux-gnu"* ]]; then
     # Running on Linux, use Wine
@@ -31,11 +37,11 @@ elif [[ "$OSTYPE" == "linux-gnu"* ]]; then
     # Display Wine version
     WINE_VERSION=$(wine --version)
     echo "Wine version: $WINE_VERSION"
-    echo "Running: wine luajit.exe main.lua"
+    echo "Running: wine luajit.exe main.lua $@"
     echo ""
 
-    # Run LuaJIT with Wine
-    wine luajit.exe main.lua
+    # Run LuaJIT with Wine, passing all arguments
+    wine luajit.exe main.lua "$@"
 
 else
     # Unsupported operating system
