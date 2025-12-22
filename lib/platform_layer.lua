@@ -41,8 +41,9 @@ local function detect_backend()
         return config.backend:lower()
     end
 
-    -- 4. Platform default: SDL2 everywhere (stable, mature, widely available)
-    return "sdl2"
+    -- 4. Platform default: Win32 for now (SDL2 backend in development - Phase 3)
+    -- TODO: Change to "sdl2" when SDL2 backend is complete
+    return "win32"
 end
 
 -- Initialize and load the appropriate backend
