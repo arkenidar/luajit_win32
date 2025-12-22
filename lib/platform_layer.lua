@@ -79,8 +79,10 @@ end
 -- Proxy all method calls to the loaded backend
 setmetatable(M, {
     __index = function(t, k)
-        if t.backend then
-            local value = t.backend[k]
+        -- Use rawget to avoid triggering __index recursively
+        local backend = rawget(t, "backend")
+        if backend then
+            local value = backend[k]
             if value ~= nil then
                 return value
             end
