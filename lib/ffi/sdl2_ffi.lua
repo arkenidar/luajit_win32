@@ -177,62 +177,40 @@ if not ok then
     error("Failed to load SDL2 library: " .. tostring(err))
 end
 
--- Export SDL2 functions and constants
-local M = {
-    -- Initialization flags
-    SDL_INIT_VIDEO = 0x00000020,
+-- Export SDL2 C library directly (like user's working implementation)
+-- This avoids any indirection issues with function references
+local M = {}
+M.C = sdl_lib  -- Direct library access like user's code
+M.ffi = ffi
 
-    -- Window flags
-    SDL_WINDOW_SHOWN = 0x00000004,
-    SDL_WINDOW_RESIZABLE = 0x00000020,
-    SDL_WINDOW_OPENGL = 0x00000002,
+-- Constants
+M.SDL_INIT_VIDEO = 0x00000020
+M.SDL_WINDOW_SHOWN = 0x00000004
+M.SDL_WINDOW_RESIZABLE = 0x00000020
+M.SDL_WINDOW_OPENGL = 0x00000002
+M.SDL_WINDOWPOS_UNDEFINED = 0x1FFF0000
+M.SDL_WINDOWPOS_CENTERED = 0x2FFF0000
+M.SDL_QUIT = 0x100
+M.SDL_WINDOWEVENT = 0x200
+M.SDL_KEYDOWN = 0x300
+M.SDL_KEYUP = 0x301
+M.SDL_TEXTINPUT = 0x303
+M.SDL_MOUSEMOTION = 0x400
+M.SDL_MOUSEBUTTONDOWN = 0x401
+M.SDL_MOUSEBUTTONUP = 0x402
+M.SDL_WINDOWEVENT_SIZE_CHANGED = 6
+M.SDL_GL_DOUBLEBUFFER = 5
+M.SDL_GL_DEPTH_SIZE = 6
 
-    -- Window position
-    SDL_WINDOWPOS_UNDEFINED = 0x1FFF0000,
-    SDL_WINDOWPOS_CENTERED = 0x2FFF0000,
-
-    -- Event types
-    SDL_QUIT = 0x100,
-    SDL_WINDOWEVENT = 0x200,
-    SDL_KEYDOWN = 0x300,
-    SDL_KEYUP = 0x301,
-    SDL_TEXTINPUT = 0x303,
-    SDL_MOUSEMOTION = 0x400,
-    SDL_MOUSEBUTTONDOWN = 0x401,
-    SDL_MOUSEBUTTONUP = 0x402,
-
-    -- Window events
-    SDL_WINDOWEVENT_SIZE_CHANGED = 6,
-
-    -- GL attributes
-    SDL_GL_DOUBLEBUFFER = 5,
-    SDL_GL_DEPTH_SIZE = 6,
-
-    -- Core functions
-    SDL_Init = sdl_lib.SDL_Init,
-    SDL_Quit = sdl_lib.SDL_Quit,
-
-    -- Window functions
-    SDL_CreateWindow = sdl_lib.SDL_CreateWindow,
-    SDL_DestroyWindow = sdl_lib.SDL_DestroyWindow,
-    SDL_GetWindowSurface = sdl_lib.SDL_GetWindowSurface,
-    SDL_UpdateWindowSurface = sdl_lib.SDL_UpdateWindowSurface,
-
-    -- Event functions
-    SDL_PollEvent = sdl_lib.SDL_PollEvent,
-
-    -- Mouse functions
-    SDL_GetMouseState = sdl_lib.SDL_GetMouseState,
-
-    -- OpenGL functions
-    SDL_GL_SetAttribute = sdl_lib.SDL_GL_SetAttribute,
-    SDL_GL_CreateContext = sdl_lib.SDL_GL_CreateContext,
-    SDL_GL_MakeCurrent = sdl_lib.SDL_GL_MakeCurrent,
-    SDL_GL_SwapWindow = sdl_lib.SDL_GL_SwapWindow,
-    SDL_GL_DeleteContext = sdl_lib.SDL_GL_DeleteContext,
-
-    -- Timer functions
-    SDL_Delay = sdl_lib.SDL_Delay,
-}
+-- For backwards compatibility, create metatable to access functions directly
+setmetatable(M, {
+    __index = function(t, k)
+        -- Allow direct access to SDL functions without .C prefix
+        if type(k) == "string" and k:match("^SDL_") then
+            return sdl_lib[k]
+        end
+        return rawget(t, k)
+    end
+})
 
 return M
