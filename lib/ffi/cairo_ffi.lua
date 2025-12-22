@@ -45,6 +45,11 @@ ffi.cdef[[
     } cairo_text_extents_t;
 
     // Surface management
+    cairo_surface_t* cairo_image_surface_create(
+        cairo_format_t format,
+        int width,
+        int height
+    );
     cairo_surface_t* cairo_image_surface_create_for_data(
         unsigned char *data,
         cairo_format_t format,
@@ -52,6 +57,8 @@ ffi.cdef[[
         int height,
         int stride
     );
+    unsigned char* cairo_image_surface_get_data(cairo_surface_t *surface);
+    int cairo_image_surface_get_stride(cairo_surface_t *surface);
     void cairo_surface_flush(cairo_surface_t *surface);
     void cairo_surface_mark_dirty(cairo_surface_t *surface);
     void cairo_surface_destroy(cairo_surface_t *surface);
@@ -122,7 +129,10 @@ local M = {
     CAIRO_FONT_WEIGHT_BOLD = 1,
 
     -- Surface management
+    cairo_image_surface_create = cairo_lib.cairo_image_surface_create,
     cairo_image_surface_create_for_data = cairo_lib.cairo_image_surface_create_for_data,
+    cairo_image_surface_get_data = cairo_lib.cairo_image_surface_get_data,
+    cairo_image_surface_get_stride = cairo_lib.cairo_image_surface_get_stride,
     cairo_surface_flush = cairo_lib.cairo_surface_flush,
     cairo_surface_mark_dirty = cairo_lib.cairo_surface_mark_dirty,
     cairo_surface_destroy = cairo_lib.cairo_surface_destroy,
