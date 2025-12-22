@@ -1,7 +1,7 @@
 -- layout.lua
 -- Flexbox/Grid layout engine for LuaJIT Win32 GUI
 
-local win32 = require("lib.win32_ffi")
+local win32 = require("lib.ffi.win32_ffi")
 local ffi = require("ffi")
 
 local M = {}

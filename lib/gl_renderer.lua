@@ -1,7 +1,7 @@
 -- gl_renderer.lua
 -- OpenGL renderer for 3D rotating cube
 
-local gl = require("lib.opengl_ffi")
+local gl = require("lib.ffi.opengl_ffi")
 
 local M = {}
 

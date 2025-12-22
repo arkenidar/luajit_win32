@@ -2,7 +2,7 @@
 -- GUI abstraction layer for Win32 APIs
 
 local ffi = require("ffi")
-local win32 = require("lib.win32_ffi")
+local win32 = require("lib.ffi.win32_ffi")
 
 local M = {}
 

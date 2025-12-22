@@ -1,7 +1,7 @@
 -- app.lua
 -- To-Do List application logic
 
-local win32 = require("lib.win32_ffi")
+local win32 = require("lib.ffi.win32_ffi")
 local gl_renderer_module = require("lib.gl_renderer")
 
 local M = {}
@@ -10,14 +10,16 @@ local M = {}
 local TodoApp = {}
 TodoApp.__index = TodoApp
 
-function TodoApp:new()
+function TodoApp:new(platform)
     local self = setmetatable({}, TodoApp)
 
+    self.platform = platform  -- Store platform reference
     self.tasks = {}
     self.window = nil
     self.controls = {}
     self.control_ids = {}
     self.gl_renderer = nil
+    self.event_handlers = {}  -- Store event handlers for platform
 
     return self
 end
