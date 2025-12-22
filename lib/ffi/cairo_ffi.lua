@@ -114,61 +114,29 @@ if not ok then
     end
 end
 
--- Export Cairo C functions and constants
-local M = {
-    -- Constants
-    CAIRO_FORMAT_ARGB32 = 0,
-    CAIRO_FORMAT_RGB24 = 1,
-    CAIRO_FORMAT_A8 = 2,
+-- Export Cairo C library directly (like user's working implementation)
+-- This avoids any indirection issues with function references
+local M = {}
+M.C = cairo_lib  -- Direct library access like user's code
+M.ffi = ffi
+M.CAIRO_FORMAT_ARGB32 = 0
+M.CAIRO_FORMAT_RGB24 = 1
+M.CAIRO_FORMAT_A8 = 2
+M.CAIRO_FONT_SLANT_NORMAL = 0
+M.CAIRO_FONT_SLANT_ITALIC = 1
+M.CAIRO_FONT_SLANT_OBLIQUE = 2
+M.CAIRO_FONT_WEIGHT_NORMAL = 0
+M.CAIRO_FONT_WEIGHT_BOLD = 1
 
-    CAIRO_FONT_SLANT_NORMAL = 0,
-    CAIRO_FONT_SLANT_ITALIC = 1,
-    CAIRO_FONT_SLANT_OBLIQUE = 2,
-
-    CAIRO_FONT_WEIGHT_NORMAL = 0,
-    CAIRO_FONT_WEIGHT_BOLD = 1,
-
-    -- Surface management
-    cairo_image_surface_create = cairo_lib.cairo_image_surface_create,
-    cairo_image_surface_create_for_data = cairo_lib.cairo_image_surface_create_for_data,
-    cairo_image_surface_get_data = cairo_lib.cairo_image_surface_get_data,
-    cairo_image_surface_get_stride = cairo_lib.cairo_image_surface_get_stride,
-    cairo_surface_flush = cairo_lib.cairo_surface_flush,
-    cairo_surface_mark_dirty = cairo_lib.cairo_surface_mark_dirty,
-    cairo_surface_destroy = cairo_lib.cairo_surface_destroy,
-
-    -- Context management
-    cairo_create = cairo_lib.cairo_create,
-    cairo_destroy = cairo_lib.cairo_destroy,
-
-    -- Drawing state
-    cairo_save = cairo_lib.cairo_save,
-    cairo_restore = cairo_lib.cairo_restore,
-    cairo_set_source_rgb = cairo_lib.cairo_set_source_rgb,
-    cairo_set_source_rgba = cairo_lib.cairo_set_source_rgba,
-    cairo_set_line_width = cairo_lib.cairo_set_line_width,
-
-    -- Path construction
-    cairo_rectangle = cairo_lib.cairo_rectangle,
-    cairo_arc = cairo_lib.cairo_arc,
-    cairo_move_to = cairo_lib.cairo_move_to,
-    cairo_line_to = cairo_lib.cairo_line_to,
-    cairo_curve_to = cairo_lib.cairo_curve_to,
-    cairo_close_path = cairo_lib.cairo_close_path,
-    cairo_new_path = cairo_lib.cairo_new_path,
-
-    -- Rendering operations
-    cairo_fill = cairo_lib.cairo_fill,
-    cairo_fill_preserve = cairo_lib.cairo_fill_preserve,
-    cairo_stroke = cairo_lib.cairo_stroke,
-    cairo_stroke_preserve = cairo_lib.cairo_stroke_preserve,
-    cairo_paint = cairo_lib.cairo_paint,
-
-    -- Text rendering
-    cairo_select_font_face = cairo_lib.cairo_select_font_face,
-    cairo_set_font_size = cairo_lib.cairo_set_font_size,
-    cairo_show_text = cairo_lib.cairo_show_text,
-    cairo_text_extents = cairo_lib.cairo_text_extents,
-}
+-- For backwards compatibility, create metatable to access functions directly
+setmetatable(M, {
+    __index = function(t, k)
+        -- Allow direct access to cairo functions without .C prefix
+        if type(k) == "string" and k:match("^cairo_") then
+            return cairo_lib[k]
+        end
+        return rawget(t, k)
+    end
+})
 
 return M

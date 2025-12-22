@@ -88,9 +88,16 @@ function SDL2Backend:run_event_loop(window, event_handlers)
             end
         end
 
-        -- Render all windows
-        for _, win in pairs(self.windows) do
-            win:render()
+        -- Only render the specific window for this event loop
+        -- (Not all windows - safer and more predictable)
+        if window and window.render then
+            local ok, err = pcall(function()
+                window:render()
+            end)
+            if not ok then
+                print("[ERROR] Render failed:", err)
+                self.running = false
+            end
         end
 
         -- Small delay to prevent 100% CPU
@@ -110,10 +117,14 @@ function SDL2Backend:_handle_window_event(event, window, handlers)
         local w = event.window.data1
         local h = event.window.data2
         window:resize(w, h)
+        window:mark_dirty()
 
         if handlers.on_resize then
             handlers.on_resize(w, h)
         end
+    elseif event.window.event == sdl.WINDOWEVENT_EXPOSED then
+        -- Window needs redraw
+        window:mark_dirty()
     end
 end
 
@@ -123,8 +134,18 @@ function SDL2Backend:_handle_mouse_button_down(event, window, handlers)
 
     -- Find control under mouse and fire click event
     local control = window:hit_test(x, y)
-    if control and handlers.on_button_click then
-        handlers.on_button_click(control.id)
+    if control then
+        -- Mark button as pressed
+        control.pressed = true
+        window:mark_dirty()
+
+        if handlers.on_button_click then
+            handlers.on_button_click(control.id)
+        end
+
+        -- Reset pressed state after a brief moment (simulated)
+        control.pressed = false
+        window:mark_dirty()
     end
 end
 

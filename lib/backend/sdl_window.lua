@@ -20,6 +20,7 @@ function SDLWindow.new(title, width, height, backend)
     self.backend = backend
     self.controls = {}
     self.title = title
+    self.dirty = true  -- Need initial render
 
     -- Get SDL surface and create Cairo surface
     self:_create_cairo_surface()
@@ -35,13 +36,14 @@ function SDLWindow:_create_cairo_surface()
         error("Failed to get SDL window surface")
     end
 
-    -- Create a separate Cairo image surface for rendering
-    -- We'll copy this to SDL surface after rendering
-    -- This avoids pixel format mismatch issues
-    self.cairo_surface = cairo.cairo_image_surface_create(
+    -- ZERO-COPY: Create Cairo surface directly from SDL pixels
+    -- This is the approach used by the working gui/src/engine.lua
+    self.cairo_surface = cairo.cairo_image_surface_create_for_data(
+        ffi.cast("unsigned char*", self.sdl_surface.pixels),
         cairo.CAIRO_FORMAT_ARGB32,
         self.sdl_surface.w,
-        self.sdl_surface.h
+        self.sdl_surface.h,
+        self.sdl_surface.pitch
     )
 
     if not self.cairo_surface then
@@ -115,57 +117,137 @@ end
 
 function SDLWindow:update_hover(x, y)
     -- Update hover state for all controls
+    local changed = false
     for _, control in ipairs(self.controls) do
         local was_hover = control.hover
         local is_hover = x >= control.x and x < control.x + control.width and
                         y >= control.y and y < control.y + control.height
 
-        control.hover = is_hover
+        if was_hover ~= is_hover then
+            control.hover = is_hover
+            changed = true
+        end
+    end
 
-        -- Could trigger hover enter/leave events here in the future
+    if changed then
+        self.dirty = true
     end
 end
 
+function SDLWindow:mark_dirty()
+    self.dirty = true
+end
+
 function SDLWindow:render()
-    -- Refresh SDL surface pointer (it may change between renders)
+    -- Skip rendering if nothing changed
+    if not self.dirty then
+        return
+    end
+
+    -- Validate Cairo context
+    if not self.cairo_ctx then
+        print("[WARNING] Cairo context is nil, skipping render")
+        return
+    end
+
+    if not self.sdl_surface then
+        print("[WARNING] SDL surface is nil, skipping render")
+        return
+    end
+
+    -- Re-get SDL surface every frame like working engine.lua does
+    -- This is CRITICAL for stability with multiple renders
     self.sdl_surface = sdl.get_window_surface(self.sdl_window)
+
+    -- Check if size changed - if so, recreate Cairo surface
+    local current_w = self.sdl_surface.w
+    local current_h = self.sdl_surface.h
+    if not self.last_w or self.last_w ~= current_w or self.last_h ~= current_h then
+        -- Recreate Cairo surface for new size
+        if self.cairo_ctx then
+            cairo.cairo_destroy(self.cairo_ctx)
+        end
+        if self.cairo_surface then
+            cairo.cairo_surface_destroy(self.cairo_surface)
+        end
+
+        self.cairo_surface = cairo.cairo_image_surface_create_for_data(
+            ffi.cast("unsigned char*", self.sdl_surface.pixels),
+            cairo.CAIRO_FORMAT_ARGB32,
+            current_w,
+            current_h,
+            self.sdl_surface.pitch
+        )
+        self.cairo_ctx = cairo.cairo_create(self.cairo_surface)
+
+        self.last_w = current_w
+        self.last_h = current_h
+    end
 
     -- Clear background (white)
     cairo.cairo_set_source_rgb(self.cairo_ctx, 1, 1, 1)
     cairo.cairo_paint(self.cairo_ctx)
 
     -- Render all controls using Cairo
-    for _, control in ipairs(self.controls) do
-        self:_render_control(control)
+    for i, control in ipairs(self.controls) do
+        local ok, err = pcall(function()
+            self:_render_control(control)
+        end)
+        if not ok then
+            print("[ERROR] Failed to render control", i, ":", err)
+            return
+        end
     end
 
-    -- Flush Cairo drawing
+    -- Flush and mark Cairo surface dirty (zero-copy, no pixel copy needed)
     cairo.cairo_surface_flush(self.cairo_surface)
-
-    -- Copy Cairo surface pixels to SDL surface
-    self:_copy_cairo_to_sdl()
+    cairo.cairo_surface_mark_dirty(self.cairo_surface)
 
     -- Update SDL window with rendered content
-    sdl.update_window_surface(self.sdl_window)
+    local ok, err = pcall(function()
+        sdl.update_window_surface(self.sdl_window)
+    end)
+
+    if not ok then
+        -- Surface update failed
+        print("[WARNING] Surface update failed:", err)
+    end
+
+    -- Clear dirty flag
+    self.dirty = false
 end
 
 function SDLWindow:_copy_cairo_to_sdl()
+    -- Validate surfaces before copying
+    if not self.cairo_surface then
+        print("[WARNING] Cairo surface is nil in copy")
+        return
+    end
+
+    if not self.sdl_surface then
+        print("[WARNING] SDL surface is nil in copy")
+        return
+    end
+
     -- Get Cairo surface data (ARGB32 format)
     local cairo_data = cairo.cairo_image_surface_get_data(self.cairo_surface)
     if not cairo_data or cairo_data == nil then
-        error("Failed to get Cairo surface data")
+        print("[WARNING] Failed to get Cairo surface data")
+        return
     end
 
     local cairo_stride = cairo.cairo_image_surface_get_stride(self.cairo_surface)
     if cairo_stride <= 0 then
-        error("Invalid Cairo stride: " .. tostring(cairo_stride))
+        print("[WARNING] Invalid Cairo stride: " .. tostring(cairo_stride))
+        return
     end
 
     local height = self.sdl_surface.h
     local sdl_pitch = self.sdl_surface.pitch
 
     if not self.sdl_surface.pixels then
-        error("SDL surface has no pixels")
+        print("[WARNING] SDL surface has no pixels")
+        return
     end
 
     -- Fast row-by-row copy using ffi.copy

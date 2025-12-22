@@ -80,7 +80,8 @@ end
 function M.update_window_surface(window)
     local result = sdl_ffi.SDL_UpdateWindowSurface(window)
     if result ~= 0 then
-        error("SDL_UpdateWindowSurface failed")
+        local err_msg = ffi.string(sdl_ffi.SDL_GetError())
+        error("SDL_UpdateWindowSurface failed: " .. err_msg)
     end
 end
 
