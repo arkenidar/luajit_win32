@@ -14,7 +14,7 @@ sudo apt update
 sudo apt install luajit
 
 # Install graphics libraries
-sudo apt install libsdl2-2.0-0 libcairo2 libpango-1.0-0 libpangocairo-1.0-0 libfontconfig1
+sudo apt install libsdl2-2.0-0 libcairo2 libpango-1.0-0 libpangocairo-1.0-0 libgobject-2.0-0 libfontconfig1
 
 # Optional: Development headers (if you want to modify C bindings)
 sudo apt install libsdl2-dev libcairo2-dev libpango1.0-dev libfontconfig-dev
@@ -31,6 +31,7 @@ luajit -v
 ldconfig -p | grep -i sdl2
 ldconfig -p | grep -i cairo
 ldconfig -p | grep -i pango
+ldconfig -p | grep -i gobject
 ldconfig -p | grep -i fontconfig
 ```
 
@@ -182,11 +183,11 @@ fc-list : family | grep -i noto
 
 ### Pango Not Found
 
-**Error:** `cannot load module 'libpango-1.0.so.0'`
+**Error:** `cannot load module 'libpango-1.0.so.0'` or `libgobject-2.0: cannot open shared object file`
 
 **Fix:**
 ```bash
-sudo apt install libpango-1.0-0 libpangocairo-1.0-0
+sudo apt install libpango-1.0-0 libpangocairo-1.0-0 libgobject-2.0-0
 ```
 
 ### Permission Issues
@@ -306,7 +307,7 @@ tar czf my_app_linux_x64.tar.gz my_app_dist/
 
 Users need to install:
 ```bash
-sudo apt install luajit libsdl2-2.0-0 libcairo2 libpango-1.0-0 libfontconfig1
+sudo apt install luajit libsdl2-2.0-0 libcairo2 libpango-1.0-0 libgobject-2.0-0 libfontconfig1
 ```
 
 Then run:

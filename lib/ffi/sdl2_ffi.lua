@@ -53,8 +53,44 @@ ffi.cdef[[
     // Window event IDs
     typedef enum {
         SDL_WINDOWEVENT_NONE = 0,
-        SDL_WINDOWEVENT_SIZE_CHANGED = 6
+        SDL_WINDOWEVENT_SHOWN = 1,
+        SDL_WINDOWEVENT_HIDDEN = 2,
+        SDL_WINDOWEVENT_EXPOSED = 3,
+        SDL_WINDOWEVENT_MOVED = 4,
+        SDL_WINDOWEVENT_RESIZED = 5,
+        SDL_WINDOWEVENT_SIZE_CHANGED = 6,
+        SDL_WINDOWEVENT_MINIMIZED = 7,
+        SDL_WINDOWEVENT_MAXIMIZED = 8,
+        SDL_WINDOWEVENT_RESTORED = 9,
+        SDL_WINDOWEVENT_ENTER = 10,
+        SDL_WINDOWEVENT_LEAVE = 11,
+        SDL_WINDOWEVENT_FOCUS_GAINED = 12,
+        SDL_WINDOWEVENT_FOCUS_LOST = 13,
+        SDL_WINDOWEVENT_CLOSE = 14
     } SDL_WindowEventID;
+
+    // Key symbols (common ones used in text editor)
+    typedef enum {
+        SDLK_ESCAPE = 27,
+        SDLK_RETURN = 13,
+        SDLK_BACKSPACE = 8,
+        SDLK_DELETE = 127,
+        SDLK_HOME = 1073741882,
+        SDLK_END = 1073741881,
+        SDLK_LEFT = 1073741904,
+        SDLK_RIGHT = 1073741903,
+        SDLK_UP = 1073741906,
+        SDLK_DOWN = 1073741905,
+        SDLK_PAGEUP = 1073741899,
+        SDLK_PAGEDOWN = 1073741900
+    } SDL_Keycode;
+
+    // Key modifiers
+    typedef enum {
+        KMOD_SHIFT = 3,
+        KMOD_CTRL = 192,
+        KMOD_ALT = 768
+    } SDL_Keymod;
 
     // Keysym structure
     typedef struct SDL_Keysym {
@@ -150,6 +186,55 @@ ffi.cdef[[
     SDL_Surface* SDL_GetWindowSurface(SDL_Window *window);
     int SDL_UpdateWindowSurface(SDL_Window *window);
 
+    // Renderer types
+    typedef struct SDL_Renderer SDL_Renderer;
+    typedef struct SDL_Texture SDL_Texture;
+
+    // Renderer flags
+    typedef enum {
+        SDL_RENDERER_SOFTWARE = 0x00000001,
+        SDL_RENDERER_ACCELERATED = 0x00000002,
+        SDL_RENDERER_PRESENTVSYNC = 0x00000004,
+        SDL_RENDERER_TARGETTEXTURE = 0x00000008
+    } SDL_RendererFlags;
+
+    // Pixel format enums
+    typedef enum {
+        SDL_PIXELFORMAT_UNKNOWN = 0,
+        SDL_PIXELFORMAT_INDEX1LSB = 0x11100100,
+        SDL_PIXELFORMAT_INDEX8 = 0x13000801,
+        SDL_PIXELFORMAT_RGB24 = 0x16161804,
+        SDL_PIXELFORMAT_RGB32 = 0x16888888,
+        SDL_PIXELFORMAT_ARGB8888 = 0x16934888,
+        SDL_PIXELFORMAT_RGBA8888 = 0x16888888
+    } SDL_PixelFormatEnum;
+
+    // Texture access types
+    typedef enum {
+        SDL_TEXTUREACCESS_STATIC = 0,
+        SDL_TEXTUREACCESS_STREAMING = 1,
+        SDL_TEXTUREACCESS_TARGET = 2
+    } SDL_TextureAccess;
+
+    // Rect structure
+    typedef struct {
+        int x, y, w, h;
+    } SDL_Rect;
+
+    // Renderer functions
+    SDL_Renderer* SDL_CreateRenderer(SDL_Window *window, int index, uint32_t flags);
+    void SDL_DestroyRenderer(SDL_Renderer *renderer);
+    int SDL_SetRenderDrawColor(SDL_Renderer *renderer, uint8_t r, uint8_t g, uint8_t b, uint8_t a);
+    int SDL_RenderClear(SDL_Renderer *renderer);
+    void SDL_RenderPresent(SDL_Renderer *renderer);
+
+    // Texture functions
+    SDL_Texture* SDL_CreateTexture(SDL_Renderer *renderer, uint32_t format, int access, int w, int h);
+    void SDL_DestroyTexture(SDL_Texture *texture);
+    int SDL_UpdateTexture(SDL_Texture *texture, const SDL_Rect *rect, const void *pixels, int pitch);
+    int SDL_RenderCopy(SDL_Renderer *renderer, SDL_Texture *texture, const SDL_Rect *srcrect, const SDL_Rect *dstrect);
+    int SDL_RenderFillRect(SDL_Renderer *renderer, const SDL_Rect *rect);
+
     // Event functions
     int SDL_PollEvent(SDL_Event *event);
 
@@ -198,7 +283,21 @@ M.SDL_TEXTINPUT = 0x303
 M.SDL_MOUSEMOTION = 0x400
 M.SDL_MOUSEBUTTONDOWN = 0x401
 M.SDL_MOUSEBUTTONUP = 0x402
+M.SDL_WINDOWEVENT_NONE = 0
+M.SDL_WINDOWEVENT_SHOWN = 1
+M.SDL_WINDOWEVENT_HIDDEN = 2
+M.SDL_WINDOWEVENT_EXPOSED = 3
+M.SDL_WINDOWEVENT_MOVED = 4
+M.SDL_WINDOWEVENT_RESIZED = 5
 M.SDL_WINDOWEVENT_SIZE_CHANGED = 6
+M.SDL_WINDOWEVENT_MINIMIZED = 7
+M.SDL_WINDOWEVENT_MAXIMIZED = 8
+M.SDL_WINDOWEVENT_RESTORED = 9
+M.SDL_WINDOWEVENT_ENTER = 10
+M.SDL_WINDOWEVENT_LEAVE = 11
+M.SDL_WINDOWEVENT_FOCUS_GAINED = 12
+M.SDL_WINDOWEVENT_FOCUS_LOST = 13
+M.SDL_WINDOWEVENT_CLOSE = 14
 M.SDL_GL_DOUBLEBUFFER = 5
 M.SDL_GL_DEPTH_SIZE = 6
 

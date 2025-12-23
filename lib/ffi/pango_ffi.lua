@@ -113,10 +113,22 @@ local ok, err = pcall(function()
     local gobj_ok, gobj_result = pcall(function()
         return ffi.load(msys2_path .. "libgobject-2.0-0.dll")
     end)
+    if not gobj_ok then
+        gobj_ok, gobj_result = pcall(function() return ffi.load("gobject-2.0") end)
+    end
+    if not gobj_ok then
+        gobj_ok, gobj_result = pcall(function() return ffi.load("libgobject-2.0-0") end)
+    end
+    if not gobj_ok then
+        gobj_ok, gobj_result = pcall(function() return ffi.load("libgobject-2.0") end)
+    end
+    if not gobj_ok then
+        gobj_ok, gobj_result = pcall(function() return ffi.load("libgobject-2.0.so.0") end)
+    end
     if gobj_ok then
         gobject_lib = gobj_result
     else
-        gobject_lib = ffi.load("gobject-2.0")
+        gobject_lib = ffi.load("libgobject-2.0.so")
     end
 
     local pango_ok, pango_result = pcall(function()
@@ -130,7 +142,12 @@ local ok, err = pcall(function()
         if pango_ok2 then
             pango_lib = pango_result2
         else
-            pango_lib = ffi.load("libpango-1.0-0")
+            local pango_ok3, pango_result3 = pcall(function() return ffi.load("libpango-1.0") end)
+            if pango_ok3 then
+                pango_lib = pango_result3
+            else
+                pango_lib = ffi.load("libpango-1.0.so.0")
+            end
         end
     end
 
@@ -145,7 +162,12 @@ local ok, err = pcall(function()
         if pc_ok2 then
             pangocairo_lib = pc_result2
         else
-            pangocairo_lib = ffi.load("libpangocairo-1.0-0")
+            local pc_ok3, pc_result3 = pcall(function() return ffi.load("libpangocairo-1.0") end)
+            if pc_ok3 then
+                pangocairo_lib = pc_result3
+            else
+                pangocairo_lib = ffi.load("libpangocairo-1.0.so.0")
+            end
         end
     end
 end)
@@ -195,6 +217,35 @@ function M.show_text(cairo_ctx, text, font_desc_str)
     local layout = M.create_simple_layout(cairo_ctx, text, font_desc_str)
     pangocairo_lib.pango_cairo_show_layout(cairo_ctx, layout)
     gobject_lib.g_object_unref(layout)
+end
+
+-- Wrapper functions for text_editor.lua compatibility
+function M.pango_cairo_create_layout(cr)
+    return pangocairo_lib.pango_cairo_create_layout(cr)
+end
+
+function M.pango_layout_get_context(layout)
+    -- For now, return the layout itself as context
+    -- The actual context is used rarely in our simplified API
+    return layout
+end
+
+function M.pango_layout_unref(layout)
+    gobject_lib.g_object_unref(layout)
+end
+
+function M.pango_layout_set_font_description_str(layout, font_str)
+    local desc = pango_lib.pango_font_description_from_string(font_str)
+    pango_lib.pango_layout_set_font_description(layout, desc)
+    pango_lib.pango_font_description_free(desc)
+end
+
+function M.pango_layout_set_text(layout, text, len)
+    pango_lib.pango_layout_set_text(layout, text, len or -1)
+end
+
+function M.pango_cairo_show_layout(cr, layout)
+    pangocairo_lib.pango_cairo_show_layout(cr, layout)
 end
 
 -- For backwards compatibility, create metatable to access functions directly

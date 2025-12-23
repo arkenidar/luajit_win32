@@ -1,0 +1,82 @@
+Unicode & Emoji Test File for Text Editor
+===========================================
+
+BASIC EMOJI SUPPORT
+===================
+Smileys: 😀 😃 😄 😁 😆 😅 😂 🤣 😉 😊
+Animals: 🐶 🐱 🐭 🐹 🐰 🦊 🐻 🐼 🐨 🐯
+Nature: 🌲 🌳 🌴 🌵 🌾 🌿 🍀 🍁 🍂 🍃
+Food: 🍎 🍊 🍋 🍌 🍉 🍓 🫐 🍒 🍑 🥭
+Objects: 📱 💻 ⌨️ 🖥️ 🖨️ 📷 📹 🎥 📽️ 🎞️
+Travel: 🚗 🚕 🚙 🚌 🚎 🚐 🚚 🚛 🚜 🏎️
+Sports: ⚽ 🏀 🏈 ⚾ 🥎 🎾 🏐 🏉 🥏 🎳
+Symbols: ❤️ 💔 💕 💖 💗 💘 💝 💞 💟 ✨
+
+MULTILINGUAL TEXT
+=================
+English: The quick brown fox jumps over the lazy dog
+中文: 我是一个文本编辑器，支持Unicode和表情符号
+日本語: これはテキストエディターです
+한국어: 이것은 텍스트 편집기입니다
+العربية: هذا محرر نصوص
+Русский: Это текстовый редактор
+Ελληνικά: Αυτό είναι ένα πρόγραμμα επεξεργασίας κειμένου
+
+SPECIAL CHARACTERS
+==================
+Arrows: ← → ↑ ↓ ↔ ↕ ⇐ ⇒ ⇑ ⇓ ⇔ ⇕
+Math: ∑ ∫ ∂ ∇ √ ∞ ∝ ≠ ≈ ≤ ≥ ± × ÷
+Greek: α β γ δ ε ζ η θ ι κ λ μ ν ξ ο π
+Symbols: © ™ ® ¢ £ ¥ € ¤ ℃ ℉ ™ ° º ª ℠
+
+TYPOGRAPHY
+===========
+"Smart quotes" (should use proper quote marks in rendered version)
+'Single quotes' can also be used
+«French guillemets» ‹Single guillemets›
+„German quotes" ‚single German'
+
+TEST CASES FOR TEXT EDITOR
+===========================
+1. Bullet points
+   • First item
+   • Second item
+   • Third item with nested content
+     - Nested bullet 1
+     - Nested bullet 2
+
+2. Numbered list
+   1. First point
+   2. Second point
+   3. Third point
+
+3. Line breaks test
+   Line 1
+   Line 2
+   Line 3
+
+4. Tab indentation (if supported):
+	Tab 1
+	Tab 2
+		Nested tab
+
+EMOJI COMBINATIONS
+==================
+👨‍👩‍👧‍👦 Family (zero-width joiners)
+🇺🇸 Flag (USA)
+🏳️‍🌈 Rainbow flag
+👩‍🔬 Woman scientist
+🧑‍💻 Person coding
+🙋‍♀️ Woman raising hand
+
+UNICODE PROPERTIES TEST
+=======================
+Right-to-left text: مرحبا بالعالم
+Mixed direction: This is English مع العربية mixed
+Combining marks: é (e with acute), ñ (n with tilde)
+Ligatures: fi ff fl ffi ffl (should render properly with appropriate fonts)
+
+END OF TEST FILE
+================
+All sections of this file use UTF-8 encoding with no BOM.
+This tests the text editor's Unicode and emoji rendering capabilities.
