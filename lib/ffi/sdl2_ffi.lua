@@ -75,6 +75,14 @@ ffi.cdef[[
         SDLK_RETURN = 13,
         SDLK_BACKSPACE = 8,
         SDLK_DELETE = 127,
+        SDLK_TAB = 9,
+        SDLK_a = 97,
+        SDLK_c = 99,
+        SDLK_s = 115,
+        SDLK_v = 118,
+        SDLK_x = 120,
+        SDLK_y = 121,
+        SDLK_z = 122,
         SDLK_HOME = 1073741882,
         SDLK_END = 1073741881,
         SDLK_LEFT = 1073741904,
@@ -300,6 +308,33 @@ M.SDL_WINDOWEVENT_FOCUS_LOST = 13
 M.SDL_WINDOWEVENT_CLOSE = 14
 M.SDL_GL_DOUBLEBUFFER = 5
 M.SDL_GL_DEPTH_SIZE = 6
+
+-- Key constants
+M.SDLK_ESCAPE = 27
+M.SDLK_RETURN = 13
+M.SDLK_BACKSPACE = 8
+M.SDLK_DELETE = 127
+M.SDLK_TAB = 9
+M.SDLK_a = 97
+M.SDLK_c = 99
+M.SDLK_s = 115
+M.SDLK_v = 118
+M.SDLK_x = 120
+M.SDLK_y = 121
+M.SDLK_z = 122
+M.SDLK_HOME = 1073741882
+M.SDLK_END = 1073741881
+M.SDLK_LEFT = 1073741904
+M.SDLK_RIGHT = 1073741903
+M.SDLK_UP = 1073741906
+M.SDLK_DOWN = 1073741905
+M.SDLK_PAGEUP = 1073741899
+M.SDLK_PAGEDOWN = 1073741900
+
+-- Keyboard modifier constants
+M.KMOD_SHIFT = 3
+M.KMOD_CTRL = 192
+M.KMOD_ALT = 768
 
 -- For backwards compatibility, create metatable to access functions directly
 setmetatable(M, {

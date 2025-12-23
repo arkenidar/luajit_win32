@@ -3,6 +3,7 @@
 -- Supports emoji, Unicode, and proper text file I/O
 
 local ffi = require("ffi")
+local bit = require("bit")
 local text_editor_module = require("lib.text_editor")
 local text_io = require("lib.text_io")
 local cairo_ffi = require("lib.ffi.cairo_ffi")
@@ -198,42 +199,48 @@ end
 -- Handle keyboard input
 local function handle_key_event(event)
     local keysym = event.key.keysym.sym
+    local mod = event.key.keysym.mod
     
-    -- Get modifier keys
-    local shift = (event.key.keysym.mod % 2) == 1
-    local ctrl = ((event.key.keysym.mod / 64) % 2) == 1
-    local alt = ((event.key.keysym.mod / 256) % 2) == 1
+    -- Get modifier keys using SDL constants
+    local shift = bit.band(mod, sdl_ffi.KMOD_SHIFT) ~= 0
+    local ctrl = bit.band(mod, sdl_ffi.KMOD_CTRL) ~= 0
+    local alt = bit.band(mod, sdl_ffi.KMOD_ALT) ~= 0
+    
+    -- Debug: Log key event
+    print(string.format("[KEY] keysym=%d, shift=%s, ctrl=%s, alt=%s", keysym, tostring(shift), tostring(ctrl), tostring(alt)))
     
     if keysym == sdl_ffi.SDLK_ESCAPE then
         return false  -- Quit
     elseif keysym == sdl_ffi.SDLK_LEFT then
-        app.editor:handle_key("left", shift, ctrl, alt)
+        app.editor:cursor_left(shift)
     elseif keysym == sdl_ffi.SDLK_RIGHT then
-        app.editor:handle_key("right", shift, ctrl, alt)
+        app.editor:cursor_right(shift)
     elseif keysym == sdl_ffi.SDLK_UP then
-        app.editor:handle_key("up", shift, ctrl, alt)
+        app.editor:cursor_up(shift)
     elseif keysym == sdl_ffi.SDLK_DOWN then
-        app.editor:handle_key("down", shift, ctrl, alt)
-    elseif keysym == sdl_ffi.SDLK_HOME then
-        app.editor:handle_key("home", shift, ctrl, alt)
-    elseif keysym == sdl_ffi.SDLK_END then
-        app.editor:handle_key("end", shift, ctrl, alt)
+        app.editor:cursor_down(shift)
+
     elseif keysym == sdl_ffi.SDLK_BACKSPACE then
-        app.editor:handle_key("backspace", shift, ctrl, alt)
+        app.editor:delete_char()
         app.modified = true
     elseif keysym == sdl_ffi.SDLK_DELETE then
-        app.editor:handle_key("delete", shift, ctrl, alt)
+        app.editor:delete_char_forward()
         app.modified = true
     elseif keysym == sdl_ffi.SDLK_RETURN then
-        app.editor:handle_key("return", shift, ctrl, alt)
+        app.editor:insert_text("\n")
         app.modified = true
-    else
-        -- Check for printable character
-        local char = sdl_ffi.SDL_GetKeyName(keysym)
-        if char and #char == 1 and char ~= "" then
-            app.editor:handle_key(char, shift, ctrl, alt)
-            app.modified = true
-        end
+    elseif keysym == sdl_ffi.SDLK_TAB then
+        app.editor:insert_text("  ")
+        app.modified = true
+    elseif ctrl and keysym == sdl_ffi.SDLK_z then
+        app.editor:undo()
+    elseif ctrl and keysym == sdl_ffi.SDLK_y then
+        app.editor:redo()
+    elseif ctrl and keysym == sdl_ffi.SDLK_a then
+        app.editor:select_all()
+    elseif ctrl and keysym == sdl_ffi.SDLK_s then
+        save_file()
+
     end
     
     return true
@@ -243,9 +250,13 @@ end
 local function handle_text_input(event)
     -- event.text.text contains the UTF-8 text input
     -- This allows for proper Unicode/Emoji input
+    -- Only handles regular text input, not special keys
     local text = ffi.string(event.text.text)
     
+    print(string.format("[TEXT_INPUT] Got text: %q", text))
+    
     if text and #text > 0 then
+        -- Use insert_text directly for character input
         app.editor:insert_text(text)
         app.modified = true
     end
