@@ -37,7 +37,7 @@ function TextEditor:new(width, height, font_size, font_family)
     self.scroll_line = 1  -- First visible line
     self.scroll_offset = 0  -- Horizontal scroll offset (pixels)
     self.line_height = self.font_size + 4  -- Include spacing
-    self.char_width = self.font_size * 0.6  -- Approximate for monospace
+    self.char_width = self.font_size * 0.6  -- Approximate for monospace (will be overridden)
     
     -- Cairo and Pango context
     self.surface = nil
@@ -102,10 +102,81 @@ function TextEditor:_init_cairo()
     self.pango_context = pango_ffi.pango_layout_get_context(self.pango_layout)
 end
 
+-- Measure text width using Pango (proportional rendering)
+function TextEditor:_measure_text_width(text)
+    if not text or text == "" then return 0 end
+    
+    -- Safety check - avoid calling into Pango if context not ready
+    if not self.pango_layout or not self.cr then
+        return #text * self.char_width
+    end
+    
+    -- Set font for layout
+    pango_ffi.pango_layout_set_font_description_str(
+        self.pango_layout, 
+        self.font_family .. " " .. self.font_size
+    )
+    
+    -- Set text
+    pango_ffi.pango_layout_set_text(self.pango_layout, text, -1)
+    
+    -- Get pixel size safely
+    local status, width, height = pcall(function()
+        return pango_ffi.pango_layout_get_pixel_size(self.pango_layout, nil, nil)
+    end)
+    
+    if status and width then
+        return width
+    else
+        -- Fallback to fixed width if measurement fails
+        return #text * self.char_width
+    end
+end
+
+-- Get cursor X position for a specific column on a line
+function TextEditor:_get_cursor_x(line_num, col)
+    if col <= 1 then
+        return 50 - self.scroll_offset
+    end
+    
+    local line = self.lines[line_num] or ""
+    local text_before = string.sub(line, 1, col - 1)
+    local x = 50 + self:_measure_text_width(text_before) - self.scroll_offset
+    
+    return x
+end
+
+-- Get column at a specific X position on a line
+function TextEditor:_get_column_at_x(line_num, x)
+    local line = self.lines[line_num] or ""
+    local target_x = x + self.scroll_offset - 50
+    
+    if target_x < 0 then return 1 end
+    
+    -- Binary search for column
+    local left, right = 1, #line + 1
+    
+    while left < right do
+        local mid = math.floor((left + right) / 2)
+        local text_before = string.sub(line, 1, mid - 1)
+        local measured_x = self:_measure_text_width(text_before)
+        
+        if measured_x < target_x then
+            left = mid + 1
+        else
+            right = mid
+        end
+    end
+    
+    return math.min(left, #line + 1)
+end
+
 -- Cleanup Cairo context
 function TextEditor:cleanup()
     if self.pango_layout then
-        pango_ffi.pango_layout_unref(self.pango_layout)
+        pcall(function()
+            pango_ffi.pango_layout_unref(self.pango_layout)
+        end)
         self.pango_layout = nil
     end
     
@@ -535,8 +606,13 @@ function TextEditor:_render_selection_line(line_num, y)
     end
     
     if sel_start and sel_end then
-        local x_start = 50 + (sel_start - 1) * self.char_width - self.scroll_offset
-        local x_end = 50 + (sel_end - 1) * self.char_width - self.scroll_offset
+        -- Use actual text measurements instead of fixed char width
+        local line = self.lines[line_num] or ""
+        local text_before_start = string.sub(line, 1, sel_start - 1)
+        local text_before_end = string.sub(line, 1, sel_end - 1)
+        
+        local x_start = 50 + self:_measure_text_width(text_before_start) - self.scroll_offset
+        local x_end = 50 + self:_measure_text_width(text_before_end) - self.scroll_offset
         
         cairo_ffi.cairo_set_source_rgba(self.cr,
             self.colors.selection.r, self.colors.selection.g, 
@@ -555,7 +631,7 @@ function TextEditor:_render_cursor()
     end
     
     local y = (self.cursor_line - self.scroll_line) * self.line_height + 4
-    local x = 50 + (self.cursor_col - 1) * self.char_width - self.scroll_offset
+    local x = self:_get_cursor_x(self.cursor_line, self.cursor_col)
     
     cairo_ffi.cairo_set_source_rgb(self.cr,
         self.colors.cursor.r, self.colors.cursor.g, self.colors.cursor.b)

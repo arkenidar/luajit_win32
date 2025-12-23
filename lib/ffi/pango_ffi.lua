@@ -248,6 +248,26 @@ function M.pango_cairo_show_layout(cr, layout)
     pangocairo_lib.pango_cairo_show_layout(cr, layout)
 end
 
+function M.pango_layout_get_pixel_size(layout, width, height)
+    -- Use pango_layout_get_pixel_extents with ink_rect and logical_rect
+    local ink_rect = ffi.new("PangoRectangle")
+    local logical_rect = ffi.new("PangoRectangle")
+    
+    if not pango_lib or not pango_lib.pango_layout_get_pixel_extents then
+        -- Fallback if function unavailable
+        if width then width[0] = 0 end
+        if height then height[0] = 0 end
+        return 0, 0
+    end
+    
+    pango_lib.pango_layout_get_pixel_extents(layout, ink_rect, logical_rect)
+    
+    if width then width[0] = logical_rect.width end
+    if height then height[0] = logical_rect.height end
+    
+    return logical_rect.width, logical_rect.height
+end
+
 -- For backwards compatibility, create metatable to access functions directly
 setmetatable(M, {
     __index = function(t, k)
