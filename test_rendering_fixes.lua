@@ -92,11 +92,12 @@ local function test_multi_line_paste()
     print(string.format("  Line 1: '%s'", editor.lines[1]))
     print(string.format("  Line 2: '%s'", editor.lines[2]))
     
+    -- Fixed expectations: The inserted text comes first, then the original "after" part
     local ok = (#editor.lines == 2) and 
                (editor.cursor_line == 2) and 
                (editor.cursor_col == 12) and
                (editor.lines[1] == "First") and
-               (editor.lines[2] == " lineSecond line")
+               (editor.lines[2] == "Second line line")
     
     print(string.format("  ✓ Multi-line paste correct: %s", ok and "PASS" or "FAIL"))
     
