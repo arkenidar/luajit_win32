@@ -8,6 +8,7 @@
 local ffi = require("ffi")
 local sdl = require("lib.sdl_base.sdl_api")
 local cairo = require("lib.ffi.cairo_ffi")
+local pango = require("lib.ffi.pango_ffi")
 
 local SDLWindow = {}
 SDLWindow.__index = SDLWindow
@@ -309,19 +310,32 @@ function SDLWindow:_render_button(btn)
     cairo.cairo_set_line_width(cr, 1)
     cairo.cairo_stroke(cr)
 
-    -- Text (centered)
+    -- Text (centered) - using Pango for emoji support
     if btn.text and btn.text ~= "" then
         cairo.cairo_set_source_rgb(cr, 0, 0, 0)
-        cairo.cairo_select_font_face(cr, "Sans", cairo.CAIRO_FONT_SLANT_NORMAL, cairo.CAIRO_FONT_WEIGHT_NORMAL)
-        cairo.cairo_set_font_size(cr, 14)
 
-        local extents = ffi.new("cairo_text_extents_t")
-        cairo.cairo_text_extents(cr, btn.text, extents)
-        local text_x = btn.x + (btn.width - extents.width) / 2
-        local text_y = btn.y + (btn.height + extents.height) / 2
+        -- Create Pango layout for text with emoji support
+        -- Font fallback: Segoe UI for regular text, Noto Color Emoji for emoji
+        local layout = pango.pango_cairo_create_layout(cr)
+        local font_desc = pango.pango_font_description_from_string("Segoe UI, Noto Color Emoji 14")
+        pango.pango_layout_set_font_description(layout, font_desc)
+        pango.pango_layout_set_text(layout, btn.text, -1)
+
+        -- Get text extents for centering
+        local ink_rect = ffi.new("PangoRectangle")
+        local logical_rect = ffi.new("PangoRectangle")
+        pango.pango_layout_get_pixel_extents(layout, ink_rect, logical_rect)
+
+        -- Center the text
+        local text_x = btn.x + (btn.width - logical_rect.width) / 2
+        local text_y = btn.y + (btn.height - logical_rect.height) / 2
 
         cairo.cairo_move_to(cr, text_x, text_y)
-        cairo.cairo_show_text(cr, btn.text)
+        pango.pango_cairo_show_layout(cr, layout)
+
+        -- Cleanup
+        pango.pango_font_description_free(font_desc)
+        pango.g_object_unref(layout)
     end
 end
 
@@ -330,11 +344,20 @@ function SDLWindow:_render_label(lbl)
 
     if lbl.text and lbl.text ~= "" then
         cairo.cairo_set_source_rgb(cr, 0, 0, 0)
-        cairo.cairo_select_font_face(cr, "Sans", cairo.CAIRO_FONT_SLANT_NORMAL, cairo.CAIRO_FONT_WEIGHT_NORMAL)
-        cairo.cairo_set_font_size(cr, 14)
 
-        cairo.cairo_move_to(cr, lbl.x, lbl.y + 14)  -- Offset for baseline
-        cairo.cairo_show_text(cr, lbl.text)
+        -- Create Pango layout for text with emoji support
+        -- Font fallback: Segoe UI for regular text, Noto Color Emoji for emoji
+        local layout = pango.pango_cairo_create_layout(cr)
+        local font_desc = pango.pango_font_description_from_string("Segoe UI, Noto Color Emoji 14")
+        pango.pango_layout_set_font_description(layout, font_desc)
+        pango.pango_layout_set_text(layout, lbl.text, -1)
+
+        cairo.cairo_move_to(cr, lbl.x, lbl.y)
+        pango.pango_cairo_show_layout(cr, layout)
+
+        -- Cleanup
+        pango.pango_font_description_free(font_desc)
+        pango.g_object_unref(layout)
     end
 end
 
@@ -377,9 +400,6 @@ function SDLWindow:_render_listbox(lb)
     local item_height = 20
     local y_offset = lb.y + 2
 
-    cairo.cairo_select_font_face(cr, "Sans", cairo.CAIRO_FONT_SLANT_NORMAL, cairo.CAIRO_FONT_WEIGHT_NORMAL)
-    cairo.cairo_set_font_size(cr, 14)
-
     for i, item_text in ipairs(lb.items) do
         local item_index = i - 1  -- 0-based index
 
@@ -393,9 +413,19 @@ function SDLWindow:_render_listbox(lb)
             cairo.cairo_set_source_rgb(cr, 0, 0, 0)  -- Black text for normal
         end
 
-        -- Draw item text
-        cairo.cairo_move_to(cr, lb.x + 4, y_offset + 14)
-        cairo.cairo_show_text(cr, item_text)
+        -- Draw item text with Pango for emoji support
+        -- Font fallback: Segoe UI for regular text, Noto Color Emoji for emoji
+        local layout = pango.pango_cairo_create_layout(cr)
+        local font_desc = pango.pango_font_description_from_string("Segoe UI, Noto Color Emoji 14")
+        pango.pango_layout_set_font_description(layout, font_desc)
+        pango.pango_layout_set_text(layout, item_text, -1)
+
+        cairo.cairo_move_to(cr, lb.x + 4, y_offset)
+        pango.pango_cairo_show_layout(cr, layout)
+
+        -- Cleanup
+        pango.pango_font_description_free(font_desc)
+        pango.g_object_unref(layout)
 
         y_offset = y_offset + item_height
 
