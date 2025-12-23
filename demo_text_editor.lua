@@ -22,7 +22,8 @@ local app = {
     cursor_blink = 0,
     show_cursor = true,
     status_message = "Ready",
-    status_timeout = 0
+    status_timeout = 0,
+    clipboard = ""  -- Clipboard for copy/paste
 }
 
 -- Initialize SDL and create window
@@ -188,7 +189,7 @@ local function display_editor()
     sdl_ffi.SDL_RenderFillRect(app.renderer, status_rect)
     
     -- Draw help text in status bar
-    local help_text = "Ctrl+Z: Undo | Ctrl+Y: Redo | Ctrl+A: Select All | Ctrl+S: Save | ESC: Quit"
+    local help_text = "Ctrl+Z: Undo | Ctrl+Y: Redo | Ctrl+A: Select All | Ctrl+C/X/V: Copy/Cut/Paste | Ctrl+S: Save | ESC: Quit"
     
     -- Note: For full implementation, we'd render this using Pango as well
     
@@ -238,6 +239,30 @@ local function handle_key_event(event)
         app.editor:redo()
     elseif ctrl and keysym == sdl_ffi.SDLK_a then
         app.editor:select_all()
+    elseif ctrl and keysym == sdl_ffi.SDLK_c then
+        -- Copy selected text to clipboard
+        app.clipboard = app.editor:get_selected_text()
+        if app.clipboard ~= "" then
+            app.status_message = "Copied to clipboard"
+            app.status_timeout = 1500
+        end
+    elseif ctrl and keysym == sdl_ffi.SDLK_x then
+        -- Cut: copy then delete selection
+        app.clipboard = app.editor:get_selected_text()
+        if app.clipboard ~= "" then
+            app.editor:delete_selection()
+            app.modified = true
+            app.status_message = "Cut to clipboard"
+            app.status_timeout = 1500
+        end
+    elseif ctrl and keysym == sdl_ffi.SDLK_v then
+        -- Paste from clipboard
+        if app.clipboard ~= "" then
+            app.editor:insert_text(app.clipboard)
+            app.modified = true
+            app.status_message = "Pasted from clipboard"
+            app.status_timeout = 1500
+        end
     elseif ctrl and keysym == sdl_ffi.SDLK_s then
         save_file()
 
@@ -324,7 +349,7 @@ local function run()
         return
     end
     
-    print("Use Ctrl+Z to undo, Ctrl+Y to redo, ESC to quit")
+    print("Use Ctrl+Z to undo, Ctrl+Y to redo, Ctrl+C/X/V for copy/cut/paste, ESC to quit")
     
     local running = true
     local event = ffi.new("SDL_Event")
