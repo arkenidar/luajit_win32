@@ -30,16 +30,16 @@ local demo_labels = {
 
 -- Color palette buttons
 local colors = {
-    {r=0.9, g=0.3, b=0.3, name="Red"},
-    {r=0.3, g=0.7, b=0.9, name="Blue"},
-    {r=0.3, g=0.9, b=0.4, name="Green"},
-    {r=0.9, g=0.7, b=0.2, name="Gold"},
-    {r=0.7, g=0.4, b=0.9, name="Purple"},
+    { r = 0.9, g = 0.3, b = 0.3, name = "Red" },
+    { r = 0.3, g = 0.7, b = 0.9, name = "Blue" },
+    { r = 0.3, g = 0.9, b = 0.4, name = "Green" },
+    { r = 0.9, g = 0.7, b = 0.2, name = "Gold" },
+    { r = 0.7, g = 0.4, b = 0.9, name = "Purple" },
 }
 
 local palette_buttons = {}
 for i, color in ipairs(colors) do
-    local x = 40 + (i-1) * 145
+    local x = 40 + (i - 1) * 145
     palette_buttons[i] = backend:create_button(window, x, 250, 135, 50, color.name)
 end
 
@@ -71,10 +71,10 @@ local perf_label = backend:create_label(window, 410, 460, 350, 25,
 
 -- Create visual demo boxes (will be drawn with custom rendering)
 local demo_boxes = {
-    {x=410, y=490, w=80, h=60, color={0.9, 0.3, 0.3}},
-    {x=500, y=490, w=80, h=60, color={0.3, 0.7, 0.9}},
-    {x=590, y=490, w=80, h=60, color={0.3, 0.9, 0.4}},
-    {x=680, y=490, w=80, h=60, color={0.9, 0.7, 0.2}},
+    { x = 410, y = 490, w = 80, h = 60, color = { 0.9, 0.3, 0.3 } },
+    { x = 500, y = 490, w = 80, h = 60, color = { 0.3, 0.7, 0.9 } },
+    { x = 590, y = 490, w = 80, h = 60, color = { 0.3, 0.9, 0.4 } },
+    { x = 680, y = 490, w = 80, h = 60, color = { 0.9, 0.7, 0.2 } },
 }
 
 print("✓ Showcase created!")
@@ -104,10 +104,10 @@ window.render_custom = function(self)
         -- Draw rounded rectangle with gradient effect
         local radius = 8
         cairo.cairo_new_path(cr)
-        cairo.cairo_arc(cr, box.x + radius, box.y + radius, radius, math.pi, 3*math.pi/2)
-        cairo.cairo_arc(cr, box.x + box.w - radius, box.y + radius, radius, 3*math.pi/2, 0)
-        cairo.cairo_arc(cr, box.x + box.w - radius, box.y + box.h - radius, radius, 0, math.pi/2)
-        cairo.cairo_arc(cr, box.x + radius, box.y + box.h - radius, radius, math.pi/2, math.pi)
+        cairo.cairo_arc(cr, box.x + radius, box.y + radius, radius, math.pi, 3 * math.pi / 2)
+        cairo.cairo_arc(cr, box.x + box.w - radius, box.y + radius, radius, 3 * math.pi / 2, 0)
+        cairo.cairo_arc(cr, box.x + box.w - radius, box.y + box.h - radius, radius, 0, math.pi / 2)
+        cairo.cairo_arc(cr, box.x + radius, box.y + box.h - radius, radius, math.pi / 2, math.pi)
         cairo.cairo_close_path(cr)
 
         -- Fill with color
@@ -124,7 +124,7 @@ window.render_custom = function(self)
     for i = 1, 5 do
         local x = 700 + i * 15
         local y = 30
-        cairo.cairo_arc(cr, x, y, 5, 0, 2*math.pi)
+        cairo.cairo_arc(cr, x, y, 5, 0, 2 * math.pi)
         cairo.cairo_set_source_rgba(cr, 0.3, 0.6, 0.9, 0.7)
         cairo.cairo_fill(cr)
     end
@@ -144,10 +144,7 @@ end
 
 window.render = window.render_custom
 
--- Render once to show the demo
-window:render()
-
-print("✓ Demo rendered successfully!")
+print("✓ Demo setup complete!")
 print("")
 print("Key features demonstrated:")
 print("  ✓ " .. (#demo_buttons) .. " large buttons with rounded corners")
@@ -159,15 +156,21 @@ print("  ✓ Custom status bar with Cairo primitives")
 print("")
 print("All rendered with anti-aliased vector graphics!")
 print("No pixelation, no jagged edges - pure vector beauty.")
-
--- Render succeeds - output saved to window (visible during event loop)
 print("")
-print("NOTE: Window rendered successfully!")
-print("      To see the demo interactively, use test_event_loop.lua")
-print("      Single-shot rendering works perfectly.")
+print("Starting event loop (close window to exit)...")
 
--- Cleanup
-backend:destroy_window(window)
+backend:run_event_loop(window, {
+    on_create = function()
+        print("   [Event] Window created - Cairo showcase ready!")
+    end,
+    on_button_click = function(id)
+        print("   [Event] Button clicked:", id)
+    end,
+    on_close = function()
+        print("   [Event] Closing...")
+    end
+})
+
 print("")
 print("✓ Demo complete!")
 print("")
@@ -177,3 +180,6 @@ print("  • Smooth anti-aliased shapes")
 print("  • Pixel-perfect text")
 print("  • Custom vector graphics")
 print("  • All running on pure LuaJIT + FFI!")
+
+-- Cleanup
+backend:destroy_window(window)
